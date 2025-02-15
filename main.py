@@ -86,6 +86,7 @@ def download(args):
   
 
 def parse_args():
+    # initialize command line parameters parser
     parser = argparse.ArgumentParser(description="Amazon S3")
     subparsers = parser.add_subparsers(dest="command")
 
