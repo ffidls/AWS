@@ -3,7 +3,7 @@ import boto3
 from botocore.exceptions import ClientError
 import os
 import argparse
-
+s = 0
 
 # Let's use Amazon S3
 s3 = boto3.resource('s3')
@@ -62,7 +62,7 @@ def upload_file(args):
         logging.error(e)
         print("upload error")
         return False
-    print("uploud done")
+    print("upload was done")
     return True
 
 """
@@ -80,9 +80,9 @@ def download(args):
     for obj in objects['Contents']:
         print(obj['Key'])
 
-    name_fail = input("write fail name which you want dwoload: ")
-    ind = name_fail.index(".")
-    s3.download_file(bucket_name, name_fail, f"s3_file{name_fail[ind:]}")
+    name_file = input("enter the name of the file you want to download: ")
+    ind = name_file.index(".")
+    s3.download_file(bucket_name, name_file, f"s3_file{name_file[ind:]}")
   
 
 def parse_args():
@@ -92,11 +92,11 @@ def parse_args():
     parser_list = subparsers.add_parser("list", help="list of S3 ")
     parser_list.set_defaults(func=list_buckets)
 
-    upload_bucket = subparsers.add_parser("uploud", help="write file name")
+    upload_bucket = subparsers.add_parser("upload", help="write file name")
     upload_bucket.add_argument("file_name", type=str)
     upload_bucket.set_defaults(func=upload_file)
 
-    download_fail = subparsers.add_parser("download", help="dowloud fail")
+    download_fail = subparsers.add_parser("download", help="download file")
     download_fail.set_defaults(func=download)
 
     return parser.parse_args()
@@ -105,7 +105,6 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # Проверяем, передана ли команда
     if not hasattr(args, "func"):
         print("error")
         return
