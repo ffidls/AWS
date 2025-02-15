@@ -9,6 +9,7 @@ s = 0
 s3 = boto3.resource('s3')
 bucket_name = "ffodls-s3-demo-bucket-example111111"
 
+
 def check_bucket(name):
     s3_for_check = boto3.client('s3')
     try:
@@ -87,7 +88,7 @@ def download(args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Amazon S3")
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", help="list-upload-download")
 
     parser_list = subparsers.add_parser("list", help="list of S3 ")
     parser_list.set_defaults(func=list_buckets)
@@ -106,9 +107,8 @@ def main():
     args = parse_args()
 
     if not hasattr(args, "func"):
-        print("error")
+        print("Error: use --help for information")
         return
-
     args.func(args)
 
 
