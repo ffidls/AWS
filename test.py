@@ -1,3 +1,5 @@
-a = "12345678.png"
-ind = a.index(".")
-print(a[ind:])
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("help")
+args = parser.parse_args()
+print(args.help) 
