@@ -43,7 +43,7 @@ def check_bucket(name):
         if str(bucket_name) == name:
             fl = False
         # print(bucket.name)
-    create_bucket(name) if not fl else print("lol")
+    create_bucket(name) if not fl else None
     return fl
 
 
@@ -83,13 +83,13 @@ def download(args):
         # s3.download_file('amzn-s3-demo-bucket', 'OBJECT_NAME', 'FILE_NAME')
         name_file = args.file_download
 
-        print("fails which you have:")
-        objects = s3.list_objects_v2(Bucket=bucket_name)
+        # print("fails which you have:")
+        """objects = s3.list_objects_v2(Bucket=bucket_name)
         for obj in objects['Contents']:
-            print(obj['Key'])
+            print(obj['Key'])"""
 
         ind = name_file.index(".")
-        #s3.download_file(bucket_name, name_file, f"s3_{name_file[:ind]}{name_file[ind:]}")
+        s3.download_file(bucket_name, name_file, f"s3_{name_file[:ind]}{name_file[ind:]}")
 
     except Exception:
         print("no such file")
