@@ -5,113 +5,98 @@ import os
 import argparse
 
 # Let's use Amazon S3
-s3 = boto3.resource('s3')
-bucket_name = "ffodls-s3-demo-bucket-example111117"
+bucket_name = "ffodls-s3-demo-bucket-example111119"
 
 
-def create_bucket(
-    name=bucket_name,
-    region=None):
+class AWS_OBJ:
+    def __init__(self, bucket_name, test_mode=False):
+        self.bucket_name = bucket_name
+        self.s3_resource = boto3.resource('s3')
+        self.s3_client = boto3.client('s3')
+        self.test_mode = test_mode
 
-    # Create bucket
-    try:
-        if region is None:
-            s3_client = boto3.client('s3')
-            s3_client.create_bucket(Bucket=name)
-        else:
-            s3_client = boto3.client('s3', region_name=region)
-            location = {'LocationConstraint': region}
-            s3_client.create_bucket(Bucket=name,
-                                    CreateBucketConfiguration=location)
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
-
-
-def check_bucket(name):
-    """s3_for_check = boto3.client('s3')
-    try:
-        s3_for_check.head_object(Bucket=name)
+    def create_bucket1(self, region=None):
+        try:
+            if region is None:
+                self.s3_client.create_bucket(Bucket=self.bucket_name)
+            else:
+                location = {'LocationConstraint': region}
+                self.s3_client.create_bucket(Bucket=self.bucket_name,
+                                CreateBucketConfiguration=location)
+        except ClientError as e:
+            logging.error(e)
+            return False
         return True
 
-    except ClientError as e:
-        if e.response['Error']['Code'] == '404':
-            return False"""
-    fl = True
-    for bucket in s3.buckets.all():
-        if str(bucket_name) == name:
-            fl = False
-        # print(bucket.name)
-    create_bucket(name) if not fl else None
-    return fl
+    def check_bucket(self):
+        fl = True
+        for bucket in self.s3_resource.buckets.all():
+            if str(bucket.name) == self.bucket_name:
+                fl = False
+        self.create_bucket1() if fl else None
+        print(fl)
+        return fl
 
+    def list_bucket(self, args):
+        for bucket in self.s3_resource.buckets.all():
+            print(bucket.name)
 
-def list_buckets(args):
-    # Print out bucket names
-    for bucket in s3.buckets.all():
-        print(bucket.name)
+    def upload_file(self, args):
+        file_name = args.file_name
+        self.check_bucket()
+        object_name = os.path.basename(file_name)
 
+        # Upload the file
+        try:
+            self.s3_client.upload_file(file_name, self.bucket_name, object_name)
+        except ClientError as e:
+            logging.error(e)
+            print("upload error")
+            return False
+        except FileNotFoundError:
+            print(f"The system cannot find the file specified: {file_name}")
+            return False
 
-def upload_file(args):
-    file_name = args.file_name
-
-    check_bucket(bucket_name)
-
-    object_name = os.path.basename(file_name)
-
-    # Upload the file
-    s3_client = boto3.client('s3')
-    try:
-        s3_client.upload_file(file_name, bucket_name, object_name)
-    except ClientError as e:
-        logging.error(e)
-        print("upload error")
-        return False
-    except FileNotFoundError:
-        print(f"The system cannot find the file specified: {file_name}")
-        return False
-    print("upload was done")
-    return True
-
-"""
-s3 = boto3.client('s3')
-with open("FILE_NAME", "rb") as f:
-    s3.upload_fileobj(f, "amzn-s3-demo-bucket", "OBJECT_NAME")
-"""
-
-def download(args):
-    try:
-        s3 = boto3.client('s3')
-        # s3.download_file('amzn-s3-demo-bucket', 'OBJECT_NAME', 'FILE_NAME')
-        name_file = args.file_download
-
-        print("fails which you have:")
-        objects = s3.list_objects_v2(Bucket=bucket_name)
+        objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
         for obj in objects['Contents']:
             print(obj['Key'])
 
-        ind = name_file.index(".")
-        s3.download_file(bucket_name, name_file, f"s3_{name_file[:ind]}{name_file[ind:]}")
+        print("upload was done")
+        return True
 
-    except Exception:
-        print("no such file")
+    def download(self, args):
+        try:
+            # s3.download_file('amzn-s3-demo-bucket', 'OBJECT_NAME', 'FILE_NAME')
+            name_file = args.file_download
+
+            print("fails which you have:")
+            objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+            for obj in objects['Contents']:
+                print(obj['Key'])
+
+            ind = name_file.index(".")
+            self.s3_client.download_file(self.bucket_name, name_file, f"s3_{name_file[:ind]}{name_file[ind:]}")
+
+        except Exception:
+            print("no such file")
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Amazon S3")
     subparsers = parser.add_subparsers(dest="command", help="command options: list, upload, download")
 
+    model1 = AWS_OBJ(bucket_name)
+
     parser_list = subparsers.add_parser("list", help="list of S3 ")
-    parser_list.set_defaults(func=list_buckets)
+    parser_list.set_defaults(func=model1.list_bucket)
 
     upload_bucket = subparsers.add_parser("upload", help="write file name")
     upload_bucket.add_argument("file_name", type=str)
-    upload_bucket.set_defaults(func=upload_file)
+    upload_bucket.set_defaults(func=model1.upload_file)
 
     download_fail = subparsers.add_parser("download", help="download file")
     download_fail.add_argument("file_download", type=str)
-    download_fail.set_defaults(func=download)
+    download_fail.set_defaults(func=model1.download)
 
     return parser.parse_args()
 
