@@ -118,7 +118,6 @@ def parse_args():
 
 def main():
     parser = argparse.ArgumentParser(description="Amazon S3")
-    subparsers = parser.add_subparsers(dest="command", help="command options: list, upload, download")
     args = parse_args()
 
     # check on namespace
