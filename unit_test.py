@@ -26,7 +26,7 @@ class MyTest(unittest.TestCase):
 
     def test(self):
         content = b"abc"
-        key = "/path/to/obj"
+        key = "s3_test.txt"
 
         # run the file which uploads to S3
         func_to_test(self.bucket_name, key, content)
