@@ -1,113 +1,43 @@
-import logging
-import boto3
-from botocore.exceptions import ClientError
-import os
 import argparse
-s = 0
 
-# Let's use Amazon S3
-s3 = boto3.resource('s3')
-bucket_name = "ffodls-s3-demo-bucket-example111111"
+import boto3
 
-def check_bucket(name):
-    s3_for_check = boto3.client('s3')
-    try:
-        s3_for_check.head_object(Bucket=name, Key='file-key')
-        return True
-    except ClientError as e:
-        if e.response['Error']['Code'] == '404':
-            return False                                                             
+from Implementation.S3Operation import S3FileOperations
+from Logic.Brain import Skeleton
 
-
-def list_buckets(args):
-    # Print out bucket names
-    for bucket in s3.buckets.all():
-        print(bucket.name)
-
-
-def create_bucket(
-    name=bucket_name, 
-    region=None):
-
-    # Create bucket
-    try:
-        if region is None:
-            s3_client = boto3.client('s3')
-            s3_client.create_bucket(Bucket=name)
-        else:
-            s3_client = boto3.client('s3', region_name=region)
-            location = {'LocationConstraint': region}
-            s3_client.create_bucket(Bucket=name,
-                                    CreateBucketConfiguration=location)
-    except ClientError as e:
-        logging.error(e)
-        return False
-    return True
-
-
-def upload_file(args):
-    file_name = args.file_name
-
-    """if not check_bucket(bucket_name):
-        print("create a new bucket, try again")
-        #create_bucket()"""
-
-    object_name = os.path.basename(file_name)
-
-    # Upload the file
-    s3_client = boto3.client('s3')
-    try:
-        s3_client.upload_file(file_name, bucket_name, object_name)
-    except ClientError as e:
-        logging.error(e)
-        print("upload error")
-        return False
-    print("upload was done")
-    return True
-
-"""
-s3 = boto3.client('s3')
-with open("FILE_NAME", "rb") as f:
-    s3.upload_fileobj(f, "amzn-s3-demo-bucket", "OBJECT_NAME")
-"""
-
-def download(args):
-    s3 = boto3.client('s3')
-    #s3.download_file('amzn-s3-demo-bucket', 'OBJECT_NAME', 'FILE_NAME')
-
-    print("fails which you have:")
-    objects = s3.list_objects_v2(Bucket=bucket_name)
-    for obj in objects['Contents']:
-        print(obj['Key'])
-
-    name_file = input("enter the name of the file you want to download: ")
-    ind = name_file.index(".")
-    s3.download_file(bucket_name, name_file, f"s3_file{name_file[ind:]}")
-  
 
 def parse_args():
     # initialize command line parameters parser
     parser = argparse.ArgumentParser(description="Amazon S3")
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", help="command options: list, upload, download")
+
+    S3File = S3FileOperations(bucket_name="ffodls-s3-demo-bucket-example111119",
+                              s3_resource=boto3.resource("s3"),
+                              s3_client=boto3.client("s3"))
+    model1 = Skeleton(bucket_name="ffodls-s3-demo-bucket-example111119",
+                      file_operations=S3File)
 
     parser_list = subparsers.add_parser("list", help="list of S3 ")
-    parser_list.set_defaults(func=list_buckets)
+    parser_list.set_defaults(func=model1.list_buckets)
 
     upload_bucket = subparsers.add_parser("upload", help="write file name")
     upload_bucket.add_argument("file_name", type=str)
-    upload_bucket.set_defaults(func=upload_file)
+    upload_bucket.set_defaults(func=model1.upload_file)
 
     download_fail = subparsers.add_parser("download", help="download file")
-    download_fail.set_defaults(func=download)
+    download_fail.add_argument("file_download", type=str)
+    download_fail.set_defaults(func=model1.download)
 
     return parser.parse_args()
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Amazon S3")
     args = parse_args()
 
+    # check on namespace
     if not hasattr(args, "func"):
-        print("error")
+        parser.print_help()
         return
 
     args.func(args)
